@@ -13,12 +13,11 @@ import queue
 #H = nx.read_graphml("graph.graphml.xml")
 H = nx.read_edgelist('edges.txt',nodetype=int, data=(('weight',float),))
 
-
 print(H.size(weight='weight'))
 print(H.edges(675748905,data='weight'))
 array = list(H.nodes())
 print(len(array))
-G = H.subgraph(array[:])
+G = H.subgraph(array[:1000])
 
 """
 G=nx.Graph()
@@ -36,7 +35,9 @@ G.add_edge('e','d',weight=0.6)
 G.add_edge('f','g',weight=1)
 G.add_edge('g','h',weight=0.1)
 G.add_edge('e','h',weight=1)
-
+G.add_edge('x','y',weight=2)
+G.add_edge('y','z',weight=1)
+G.add_edge('x','z',weight=1)
 """
 
 #print(nx.adjacency_matrix(G,nodelist = ['c','e']).todense())
@@ -51,7 +52,8 @@ eigenvalues, eigenvectors = np.linalg.eig(M)
 
 #define K
 partitionSize=3
-tempEigenValues = np.absolute(eigenvalues)
+#tempEigenValues = np.absolute(eigenvalues)
+tempEigenValues = eigenvalues
 idx = tempEigenValues.argsort()[:partitionSize][::]
 eigenValues = tempEigenValues[idx]
 eigenVectors = eigenvectors[:,idx]
@@ -81,12 +83,14 @@ for k in array:
     #print(nx.adjacency_matrix(G,nodelist = k).todense())
     A = nx.laplacian_matrix(G, nodelist = k)
     tempEigenvalues, tempEigenvectors = np.linalg.eig(A.toarray())
-    sort = tempEigenvalues.argsort()
+    
+    tsort = tempEigenvalues.argsort()
+    sort = tempEigenvalues[tsort]
     #sort = tempEigenvalues
     if(sort.size>2):
         if 0 in tempEigenvectors:
             counter=collections.Counter(sort)
-            p = list(counter.values())[-1]
+            p = counter[0]
             kmeans = KMeans(n_clusters=p+1, random_state=0).fit(tempEigenvectors[:,[list(tempEigenvalues).index(0)]])
             lables = kmeans.labels_
             arrays = Handler.indexArray(k,p+1,lables)
@@ -96,8 +100,6 @@ for k in array:
             partitionArray.append(k)
     else:
         partitionArray.append(k)
-
-
 
 matrix,edgecut1 = Handler.conectivityMatrix(partitionArray,G)
 edgecut2 = 0
@@ -168,9 +170,8 @@ for p in part:
 
 np.savetxt('test_3.txt', partition,fmt='%r')
 
-
-
 """
+
 pos=nx.spring_layout(G)
 # edges
 nx.draw_networkx_edges(G,pos,
